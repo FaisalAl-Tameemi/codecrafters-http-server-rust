@@ -6,13 +6,12 @@ use super::request::HTTPRequest;
 use super::response::HTTPResponse;
 use super::status::{HTTPStatus, HTTPStatusCode};
 
-pub type HTTPHandler = Box<dyn Fn(HashMap<&'static str, String>) -> Result<HTTPResponse, Error>>;
+pub type HTTPHandler = Box<dyn Fn(HashMap<&'static str, String>, &HTTPRequest) -> Result<HTTPResponse, Error>>;
 
 pub struct Route {
     path: &'static str,
     handler: HTTPHandler,
     params: HashMap<&'static str, usize>,
-    pattern: String
 }
 
 impl Route {
@@ -54,10 +53,7 @@ impl HTTPRouter {
             }
         });
 
-        let pattern = re.replace_all(path, r"(\w+)").to_string();
-
         self.routes.push(Route {
-            pattern,
             path,
             handler,
             params
@@ -65,19 +61,36 @@ impl HTTPRouter {
     }
 
     pub fn handle_request(&self, request: &HTTPRequest) -> Result<HTTPResponse, Error> {
-        let request_path_parts = request.get_path_parts().len();
+        let request_path_parts = request.get_path_parts();
         let matched_route = self.routes.iter().find(|route| {
-            let re = Regex::new(&route.pattern).unwrap();
-            let captures = re.find(&request.path);
-            let route_path_parts = route.path.split("/").count();
+            // If paths are exactly equal, it's a direct match
+            if route.path == request.path {
+                return true;
+            }
 
-            route.path == request.path || 
-                (captures.iter().len() == route.params.keys().len() && request_path_parts == route_path_parts)
+            // For parameterized routes, we need more careful matching
+            let route_path_parts: Vec<&str> = route.path.split("/").collect();
+            
+            // Must have same number of path segments
+            if route_path_parts.len() != request_path_parts.len() {
+                return false;
+            }
+
+            // Check each path segment
+            route_path_parts.iter().zip(request_path_parts.iter()).all(|(route_part, request_part)| {
+                // If route part is a parameter (wrapped in {}), it matches any value
+                if route_part.starts_with("{") && route_part.ends_with("}") {
+                    true
+                } else {
+                    // For non-parameter segments, must match exactly
+                    route_part == request_part
+                }
+            })
         });
 
         if let Some(route) = matched_route {
             let params = route.parse_params(&request.path);
-            (route.handler)(params)
+            (route.handler)(params, request)
         } else {
             Ok(HTTPResponse::new(
                 HTTPStatus::new(
