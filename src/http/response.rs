@@ -19,8 +19,22 @@ impl HTTPResponse {
     }
 
     pub fn to_string(&self) -> String {
-        // vec![&self.status.to_string(), "\r\n", &self.headers.to_string(), "\r\n", &self.payload.to_string()].concat()
-        vec![&self.status.to_string(), "\r\n", "\r\n"].concat()
+        let mut response = String::new();
+
+        response.push_str(&self.status.to_string());
+        response.push_str("\r\n");
+
+        self.headers.iter().for_each(|header| {
+            response.push_str(&header.to_string());
+            response.push_str("\r\n");
+        });
+        response.push_str("\r\n");
+
+        if let Some(payload) = &self.payload {
+            response.push_str(&payload.to_string());
+        }
+
+        response
     }
 
     pub fn send(&self, stream: &mut TcpStream) -> Result<(), Error> {

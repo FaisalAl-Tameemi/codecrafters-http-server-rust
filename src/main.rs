@@ -1,7 +1,8 @@
-use std::io::Write;
 use std::net::TcpListener;
 
 mod http;
+use http::header::HTTPHeader;
+use http::payload::HTTPPayload;
 use http::request::HTTPRequest;
 use http::response::HTTPResponse;
 use http::router::HTTPRouter;
@@ -11,7 +12,7 @@ fn main() {
     let listener = TcpListener::bind("127.0.0.1:4221").unwrap();
     let mut router = HTTPRouter::new();
                 
-    router.add_route("/", Box::new(|| {
+    router.add_route("/", Box::new(|_| {
         let response = HTTPResponse::new(
             HTTPStatus::new(HTTPStatusCode::OK, "1.1".to_string()),
             vec![],
@@ -19,15 +20,27 @@ fn main() {
         );
         Ok(response)
     }));
+
+    router.add_route("/echo/{message}", Box::new(|params| {
+        let response = HTTPResponse::new(
+            HTTPStatus::new(HTTPStatusCode::OK, "1.1".to_string()),
+            vec![
+                HTTPHeader::new("Content-Type".to_string(), "text/plain".to_string()),
+                HTTPHeader::new("Content-Length".to_string(), params["message"].len().to_string()),
+            ],
+            Some(HTTPPayload::new(params["message"].to_string()))
+        );
+        Ok(response)
+    }));
     
     for stream in listener.incoming() {
         match stream {
             Ok(mut stream) => {
-                println!("Incoming connection from {:?}", stream.peer_addr().unwrap());
-
                 let request = HTTPRequest::from_stream(&mut stream).unwrap();
 
-                match router.handle_request(&request.path, &mut stream) {
+                println!("Received request: {:?}", request);
+
+                match router.handle_request(&request) {
                     Ok(response) => {
                         response.send(&mut stream).unwrap();
                     },

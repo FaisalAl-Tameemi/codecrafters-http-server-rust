@@ -37,5 +37,9 @@ impl HTTPRequest {
             body: None
         })
     }
+
+    pub fn get_path_parts(&self) -> Vec<&str> {
+        self.path.split("/").collect::<Vec<&str>>()
+    }
 }
 
