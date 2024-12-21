@@ -1,4 +1,3 @@
-use std::borrow::BorrowMut;
 use std::sync::Arc;
 use http::error::Error;
 use tokio::net::TcpListener;
@@ -99,7 +98,7 @@ async fn main() {
                 let router = Arc::clone(&router);
                 
                 tokio::spawn(async move {
-                    let mut request = HTTPRequest::from_stream(&mut stream).await.unwrap();
+                    let request = HTTPRequest::from_stream(&mut stream).await.unwrap();
                     match router.handle_request(&request) {
                         Ok(response) => {
                             response.send(&mut stream).await.unwrap();
