@@ -1,4 +1,4 @@
-use tokio::{io::{AsyncReadExt, AsyncWriteExt}, net::TcpStream};
+use tokio::{io::AsyncReadExt, net::TcpStream};
 
 use crate::http::error::Error;
 
@@ -10,7 +10,7 @@ pub struct HTTPRequest {
     pub path: String,
     pub version: String,
     pub headers: Vec<HTTPHeader>,
-    pub body: Option<HTTPPayload>
+    pub body: Option<HTTPPayload>,
 }
 
 impl HTTPRequest {
@@ -45,7 +45,7 @@ impl HTTPRequest {
             path,
             version,
             headers,
-            body: None
+            body: None,
         })
     }
 
@@ -54,7 +54,8 @@ impl HTTPRequest {
     }
 
     pub fn get_header(&self, name: &str) -> Option<&HTTPHeader> {
-        self.headers.iter().find(|header| header.name == name)
+        self.headers
+            .iter()
+            .find(|header| header.name == name)
     }
 }
-

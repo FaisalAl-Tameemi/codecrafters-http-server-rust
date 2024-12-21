@@ -4,4 +4,6 @@ use thiserror::Error;
 pub enum Error {
     #[error("Invalid HTTP status code: {0}")]
     InvalidStatusCode(u16),
+    #[error("Directory not set")]
+    DirectoryNotSet,
 }
