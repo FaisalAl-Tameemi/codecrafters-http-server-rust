@@ -6,7 +6,9 @@ use super::request::HTTPRequest;
 use super::response::HTTPResponse;
 use super::status::{HTTPStatus, HTTPStatusCode};
 
-pub type HTTPHandler = Box<dyn Fn(HashMap<&'static str, String>, &HTTPRequest) -> Result<HTTPResponse, Error>>;
+pub type HTTPHandler = 
+    Box<dyn Fn(HashMap<&'static str, String>, &HTTPRequest) -> 
+        Result<HTTPResponse, Error> + Send + Sync>;
 
 pub struct Route {
     path: &'static str,

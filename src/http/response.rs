@@ -1,5 +1,6 @@
 use std::io::Write;
-use std::net::TcpStream;
+use tokio::io::AsyncWriteExt;
+use tokio::net::TcpStream;
 
 use super::header::HTTPHeader;
 use super::status::HTTPStatus;
@@ -37,8 +38,9 @@ impl HTTPResponse {
         response
     }
 
-    pub fn send(&self, stream: &mut TcpStream) -> Result<(), Error> {
-        stream.write_all(self.to_string().as_bytes()).unwrap();
+    pub async fn send(&self, stream: &mut TcpStream) -> Result<(), Error> {
+        println!("Sending response: {}", self.to_string());
+        stream.write_all(self.to_string().as_bytes()).await.unwrap();
         Ok(())
     }
 }

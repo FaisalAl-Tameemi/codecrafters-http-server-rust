@@ -1,4 +1,5 @@
-use std::net::TcpListener;
+use std::sync::Arc;
+use tokio::net::TcpListener;
 
 mod http;
 use http::header::HTTPHeader;
@@ -8,8 +9,9 @@ use http::response::HTTPResponse;
 use http::router::HTTPRouter;
 use http::status::{HTTPStatus, HTTPStatusCode};
 
-fn main() {
-    let listener = TcpListener::bind("127.0.0.1:4221").unwrap();
+#[tokio::main]
+async fn main() {
+    let listener = TcpListener::bind("127.0.0.1:4221").await.unwrap();
     let mut router = HTTPRouter::new();
                 
     router.add_route("/", Box::new(|_, _| {
@@ -45,20 +47,23 @@ fn main() {
         );
         Ok(response)
     }));
+
+    let router = Arc::new(router);
     
-    for stream in listener.incoming() {
-        match stream {
-            Ok(mut stream) => {
-                let request = HTTPRequest::from_stream(&mut stream).unwrap();
-
-                println!("Received request: {:?}", request);
-
-                match router.handle_request(&request) {
-                    Ok(response) => {
-                        response.send(&mut stream).unwrap();
-                    },
-                    Err(e) => println!("error: {}", e),
-                }
+    loop {
+        match listener.accept().await {
+            Ok((mut stream, _)) => {
+                let router = Arc::clone(&router);
+                
+                tokio::spawn(async move {
+                    let request = HTTPRequest::from_stream(&mut stream).await.unwrap();
+                    match router.handle_request(&request) {
+                        Ok(response) => {
+                            response.send(&mut stream).await.unwrap();
+                        },
+                        Err(e) => println!("error: {}", e),
+                    }
+                });
             }
             Err(e) => {
                 println!("error: {}", e);

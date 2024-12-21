@@ -1,4 +1,4 @@
-use std::{io::Read, net::TcpStream};
+use tokio::{io::{AsyncReadExt, AsyncWriteExt}, net::TcpStream};
 
 use crate::http::error::Error;
 
@@ -14,12 +14,12 @@ pub struct HTTPRequest {
 }
 
 impl HTTPRequest {
-    pub fn from_stream(stream: &mut TcpStream) -> Result<Self, Error> {
+    pub async fn from_stream(stream: &mut TcpStream) -> Result<Self, Error> {
         let mut buf = [0; 1024];
-        let len = stream.peek(&mut buf).expect("peek failed");
+        let len = stream.peek(&mut buf).await.expect("peek failed");
         
         let mut buffer = [0; 1024];
-        stream.read(&mut buffer).unwrap();
+        stream.read(&mut buffer).await.unwrap();
 
         let request = String::from_utf8(buffer[..len].to_vec()).unwrap();
         let mut request_lines = request.split("\r\n");
