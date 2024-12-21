@@ -120,7 +120,7 @@ async fn main() {
                         Ok(response) => {
                             response.send(&mut stream).await.unwrap();
                         },
-                        Err(e) => println!("error: {}", e),
+                        Err(e) => println!("unhandled server error: {}", e),
                     }
                 });
             }

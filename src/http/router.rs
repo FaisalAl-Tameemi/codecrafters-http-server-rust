@@ -2,7 +2,9 @@ use std::collections::HashMap;
 use regex::Regex;
 
 use super::error::Error;
+use super::header::HTTPHeader;
 use super::method::HTTPMethod;
+use super::payload::HTTPPayload;
 use super::request::HTTPRequest;
 use super::response::HTTPResponse;
 use super::status::{HTTPStatus, HTTPStatusCode};
@@ -98,7 +100,32 @@ impl HTTPRouter {
         if let Some(route) = matched_route {
             let params = route.parse_params(&request.path);
             let options = vec![self.directory.clone()];
-            (route.handler)(params, request, options)
+            match (route.handler)(params, request, options) {
+                Ok(mut response) => {
+                    // encoding middleware
+                    if let Some(encoding_header) = request.get_header("Accept-Encoding") {
+                        match encoding_header.value.as_str() {
+                            "gzip" => {
+                                response.headers.push(HTTPHeader::new(
+                                    "Content-Encoding".into(),
+                                    "gzip".into()
+                                ));
+                            }
+                            _ => {}
+                        }
+                    }
+                    
+                    Ok(response)
+                },
+                Err(e) => Ok(HTTPResponse::new(
+                    HTTPStatus::new(
+                        HTTPStatusCode::InternalServerError,
+                        "1.1".to_string()
+                    ),
+                    vec![],
+                    Some(HTTPPayload::new(e.to_string()))
+                ))
+            }
         } else {
             Ok(HTTPResponse::new(
                 HTTPStatus::new(

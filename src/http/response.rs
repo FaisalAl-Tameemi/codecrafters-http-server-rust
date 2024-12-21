@@ -9,9 +9,9 @@ use super::error::Error;
 
 #[derive(Debug)]
 pub struct HTTPResponse {
-    status: HTTPStatus,
-    payload: Option<HTTPPayload>,
-    headers: Vec<HTTPHeader>
+    pub status: HTTPStatus,
+    pub payload: Option<HTTPPayload>,
+    pub headers: Vec<HTTPHeader>
 }
 
 impl HTTPResponse {
