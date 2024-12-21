@@ -6,4 +6,6 @@ pub enum Error {
     DirectoryNotSet,
     #[error("Invalid method")]
     InvalidMethod,
+    #[error("Failed to compress payload")]
+    FailedToCompressPayload,
 }

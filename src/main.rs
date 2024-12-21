@@ -40,7 +40,6 @@ async fn main() {
             HTTPStatus::new(HTTPStatusCode::OK, "1.1".to_string()),
             vec![
                 HTTPHeader::new("Content-Type".to_string(), "text/plain".to_string()),
-                HTTPHeader::new("Content-Length".to_string(), params["message"].len().to_string()),
             ],
             Some(HTTPPayload::new(params["message"].to_string()))
         );
@@ -53,7 +52,6 @@ async fn main() {
             HTTPStatus::new(HTTPStatusCode::OK, "1.1".to_string()),
             vec![
                 HTTPHeader::new("Content-Type".to_string(), "text/plain".to_string()),
-                HTTPHeader::new("Content-Length".to_string(), user_agent.value.len().to_string()),
             ],
             Some(HTTPPayload::new(user_agent.value.to_string()))
         );
@@ -74,7 +72,6 @@ async fn main() {
                     HTTPStatus::new(HTTPStatusCode::OK, "1.1".to_string()),
                     vec![
                         HTTPHeader::new("Content-Type".to_string(), "application/octet-stream".to_string()),
-                        HTTPHeader::new("Content-Length".to_string(), file_content.len().to_string()),
                     ],
                     Some(HTTPPayload::new(String::from_utf8(file_content).unwrap()))
                 );
