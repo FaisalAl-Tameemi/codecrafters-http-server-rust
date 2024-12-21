@@ -96,7 +96,7 @@ impl HTTPRouter {
         } else {
             Ok(HTTPResponse::new(
                 HTTPStatus::new(
-                    HTTPStatusCode::NOT_FOUND,
+                    HTTPStatusCode::NotFound,
                     "1.1".to_string()
                 ),
                 vec![],

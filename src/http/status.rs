@@ -2,33 +2,33 @@
 #[derive(Debug)]
 pub enum HTTPStatusCode {
     OK = 200,
-    NOT_FOUND = 404,
-    INTERNAL_SERVER_ERROR = 500
+    NotFound = 404,
+    InternalServerError = 500
 }
 
 impl HTTPStatusCode {
     pub fn as_str(&self) -> &str {
         match self {
             HTTPStatusCode::OK => "200 OK",
-            HTTPStatusCode::NOT_FOUND => "404 Not Found",
-            HTTPStatusCode::INTERNAL_SERVER_ERROR => "500 Internal Server Error"
+            HTTPStatusCode::NotFound => "404 Not Found",
+            HTTPStatusCode::InternalServerError => "500 Internal Server Error"
         }
     }
 }
 
 #[derive(Debug)]
 pub struct HTTPStatus {
-    statusCode: HTTPStatusCode,
+    status_code: HTTPStatusCode,
     version: String
 }
 
 impl HTTPStatus {
-    pub fn new(statusCode: HTTPStatusCode, version: String) -> Self {
-        Self { statusCode, version }
+    pub fn new(status_code: HTTPStatusCode, version: String) -> Self {
+        Self { status_code, version }
     }
 
     pub fn to_string(&self) -> String {
-        ["HTTP/", self.version.as_str(), " ", self.statusCode.as_str()].concat()
+        ["HTTP/", self.version.as_str(), " ", self.status_code.as_str()].concat()
     }
 }
 

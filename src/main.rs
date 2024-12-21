@@ -81,7 +81,7 @@ async fn main() {
             }
             Err(_) => {
                 let response = HTTPResponse::new(
-                    HTTPStatus::new(HTTPStatusCode::NOT_FOUND, "1.1".to_string()),
+                    HTTPStatus::new(HTTPStatusCode::NotFound, "1.1".to_string()),
                     vec![],
                     None
                 );
