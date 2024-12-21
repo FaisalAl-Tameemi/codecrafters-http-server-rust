@@ -4,4 +4,6 @@ use thiserror::Error;
 pub enum Error {
     #[error("Directory not set")]
     DirectoryNotSet,
+    #[error("Invalid method")]
+    InvalidMethod,
 }

@@ -2,6 +2,7 @@
 #[derive(Debug)]
 pub enum HTTPStatusCode {
     OK = 200,
+    Created = 201,
     NotFound = 404,
     InternalServerError = 500
 }
@@ -10,6 +11,7 @@ impl HTTPStatusCode {
     pub fn as_str(&self) -> &str {
         match self {
             HTTPStatusCode::OK => "200 OK",
+            HTTPStatusCode::Created => "201 Created",
             HTTPStatusCode::NotFound => "404 Not Found",
             HTTPStatusCode::InternalServerError => "500 Internal Server Error"
         }

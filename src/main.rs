@@ -1,5 +1,6 @@
 use std::sync::Arc;
 use http::error::Error;
+use http::method::HTTPMethod;
 use tokio::net::TcpListener;
 use std::fs;
 use clap::Parser;
@@ -21,11 +22,11 @@ struct Args {
 
 #[tokio::main]
 async fn main() {
-    let args = Arc::new(Args::parse());
+    let args = Args::parse();
     let listener = TcpListener::bind("127.0.0.1:4221").await.unwrap();
-    let mut router = HTTPRouter::new();
-                
-    router.add_route("/", Box::new(|_, _| {
+    let mut router = HTTPRouter::new(args.directory);
+
+    router.add_route(HTTPMethod::GET, "/", Box::new(|_, _, _| {
         let response = HTTPResponse::new(
             HTTPStatus::new(HTTPStatusCode::OK, "1.1".to_string()),
             vec![],
@@ -34,7 +35,7 @@ async fn main() {
         Ok(response)
     }));
 
-    router.add_route("/echo/{message}", Box::new(|params, _| {
+    router.add_route(HTTPMethod::GET, "/echo/{message}", Box::new(|params, _, _| {
         let response = HTTPResponse::new(
             HTTPStatus::new(HTTPStatusCode::OK, "1.1".to_string()),
             vec![
@@ -46,7 +47,7 @@ async fn main() {
         Ok(response)
     }));
 
-    router.add_route("/user-agent", Box::new(|_, request| {
+    router.add_route(HTTPMethod::GET, "/user-agent", Box::new(|_, request, _| {
         let user_agent = request.get_header("User-Agent").expect("User-Agent header is required");
         let response = HTTPResponse::new(
             HTTPStatus::new(HTTPStatusCode::OK, "1.1".to_string()),
@@ -59,8 +60,8 @@ async fn main() {
         Ok(response)
     }));
 
-    router.add_route("/files/{file}", Box::new(move |params, request| {
-        let directory = match args.directory.clone() {
+    router.add_route(HTTPMethod::GET, "/files/{file}", Box::new(|params, _, options| {
+        let directory = match options.first().unwrap() {
             Some(directory) => directory,
             None => return Err(Error::DirectoryNotSet),
         };
@@ -88,6 +89,22 @@ async fn main() {
                 Ok(response)
             }
         }
+    }));
+
+    router.add_route(HTTPMethod::POST, "/files/{file}", Box::new(|params, request, options| {
+        let directory = match options.first().unwrap() {
+            Some(directory) => directory,
+            None => return Err(Error::DirectoryNotSet),
+        };
+        let file_path = String::new() + &directory + "/" + &params["file"];
+        let file_content = request.body.as_ref().unwrap().to_string();
+        fs::write(file_path, file_content).unwrap();
+        let response = HTTPResponse::new(
+            HTTPStatus::new(HTTPStatusCode::Created, "1.1".to_string()),
+            vec![],
+            None
+        );
+        Ok(response)
     }));
 
     let router = Arc::new(router);

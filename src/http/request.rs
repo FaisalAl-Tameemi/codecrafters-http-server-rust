@@ -2,11 +2,11 @@ use tokio::{io::AsyncReadExt, net::TcpStream};
 
 use crate::http::error::Error;
 
-use super::{header::HTTPHeader, payload::HTTPPayload};
+use super::{header::HTTPHeader, method::HTTPMethod, payload::HTTPPayload};
 
 #[derive(Debug)]
 pub struct HTTPRequest {
-    pub method: String,
+    pub method: HTTPMethod,
     pub path: String,
     pub version: String,
     pub headers: Vec<HTTPHeader>,
@@ -26,7 +26,7 @@ impl HTTPRequest {
 
         // parse request line
         let request_line = request_lines.next().unwrap();
-        let method = request_line.split(" ").nth(0).unwrap().to_string();
+        let method = HTTPMethod::from_str(request_line.split(" ").nth(0).unwrap()).unwrap();
         let path = request_line.split(" ").nth(1).unwrap().to_string();
         let version = request_line.split(" ").nth(2).unwrap().to_string();
 
@@ -40,12 +40,25 @@ impl HTTPRequest {
             headers.push(header);
         }
 
+        // parse body
+        let body = {
+            if let Some(line) = request_lines.next() {
+                if !line.is_empty() {
+                    Some(HTTPPayload::new(line.to_string()))
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        };
+
         Ok(Self {
             method,
             path,
             version,
             headers,
-            body: None,
+            body,
         })
     }
 

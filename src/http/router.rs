@@ -2,18 +2,20 @@ use std::collections::HashMap;
 use regex::Regex;
 
 use super::error::Error;
+use super::method::HTTPMethod;
 use super::request::HTTPRequest;
 use super::response::HTTPResponse;
 use super::status::{HTTPStatus, HTTPStatusCode};
 
 pub type HTTPHandler = 
-    Box<dyn Fn(HashMap<&'static str, String>, &HTTPRequest) -> 
+    Box<dyn Fn(HashMap<&'static str, String>, &HTTPRequest, Vec<Option<String>>) -> 
         Result<HTTPResponse, Error> + Send + Sync>;
 
 pub struct Route {
     path: &'static str,
     handler: HTTPHandler,
     params: HashMap<&'static str, usize>,
+    method: HTTPMethod
 }
 
 impl Route {
@@ -30,16 +32,18 @@ impl Route {
 pub struct HTTPRouter {
     // a map of pattern and the route
     routes: Vec<Route>,
+    directory: Option<String>
 }
 
 impl HTTPRouter {
-    pub fn new() -> Self {
+    pub fn new(directory: Option<String>) -> Self {
         Self {
             routes: Vec::new(),
+            directory
         }
     }
 
-    pub fn add_route(&mut self, path: &'static str, handler: HTTPHandler) {
+    pub fn add_route(&mut self, method: HTTPMethod, path: &'static str, handler: HTTPHandler) {
         // use regex to extract the path parameters, currently only supports one parameter
         let re = Regex::new(r"\{(\w+)\}").unwrap();
         let path_parts = path.split("/").collect::<Vec<&str>>();
@@ -58,7 +62,8 @@ impl HTTPRouter {
         self.routes.push(Route {
             path,
             handler,
-            params
+            params,
+            method
         });
     }
 
@@ -66,7 +71,7 @@ impl HTTPRouter {
         let request_path_parts = request.get_path_parts();
         let matched_route = self.routes.iter().find(|route| {
             // If paths are exactly equal, it's a direct match
-            if route.path == request.path {
+            if route.path == request.path && route.method == request.method {
                 return true;
             }
 
@@ -74,7 +79,7 @@ impl HTTPRouter {
             let route_path_parts: Vec<&str> = route.path.split("/").collect();
             
             // Must have same number of path segments
-            if route_path_parts.len() != request_path_parts.len() {
+            if route_path_parts.len() != request_path_parts.len() || route.method != request.method {
                 return false;
             }
 
@@ -92,7 +97,8 @@ impl HTTPRouter {
 
         if let Some(route) = matched_route {
             let params = route.parse_params(&request.path);
-            (route.handler)(params, request)
+            let options = vec![self.directory.clone()];
+            (route.handler)(params, request, options)
         } else {
             Ok(HTTPResponse::new(
                 HTTPStatus::new(
