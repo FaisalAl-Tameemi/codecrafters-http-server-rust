@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use regex::Regex;
 
 use super::error::Error;
@@ -104,14 +104,22 @@ impl HTTPRouter {
                 Ok(mut response) => {
                     // encoding middleware
                     if let Some(encoding_header) = request.get_header("Accept-Encoding") {
-                        match encoding_header.value.as_str() {
-                            "gzip" => {
-                                response.headers.push(HTTPHeader::new(
-                                    "Content-Encoding".into(),
-                                    "gzip".into()
-                                ));
-                            }
-                            _ => {}
+                        let encoding = encoding_header
+                            .value
+                            .split(",")
+                            .map(|e| e.trim())
+                            .collect::<HashSet<&str>>();
+                        let valid_encodings = HashSet::from(["gzip"]);
+                        let available_encodings = valid_encodings
+                            .intersection(&encoding)
+                            .collect::<Vec<_>>();
+
+                        // if any of the specified encodings are supported, add that header
+                        if available_encodings.len() > 0 {
+                            response.headers.push(HTTPHeader::new(
+                                "Content-Encoding".into(),
+                                available_encodings.first().unwrap().to_string()
+                            ));
                         }
                     }
                     
